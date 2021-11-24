@@ -1,6 +1,8 @@
 <?php
 
 namespace Middleware{
+  include_once("Datastorage.php");
+  include_once("Tools.php");
   /**
     *Name : Router
     *Type : Class
@@ -127,7 +129,7 @@ namespace Middleware{
 
     function __construct($sessions_path){
       $this -> __start_session();
-      $this -> sessions_db = new Datastorage($sessions_path);
+      $this -> sessions_db = new \Datastorage\DB($sessions_path);
     }
 
     public function Program($routeur){
@@ -248,7 +250,7 @@ namespace Middleware{
       *Description : retourne un string représentant le contenu du fichier .layout
     */
     private function __load_layout($fileName,$blockName){
-      return $this -> __make_layout_block((new fs()) -> read_file($this -> __layout_path."/".$fileName.".layout"),$blockName);
+      return $this -> __make_layout_block((new \Tools\FileSystem()) -> read_file($this -> __layout_path."/".$fileName.".layout"),$blockName);
     }
 
     /**
