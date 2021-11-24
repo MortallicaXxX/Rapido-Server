@@ -1,6 +1,4 @@
 <?php
-// include_once("src/Middleware.php");
-// use Middleware\{Routes,Sessions,BodyParser,Datastorage,Layout};
 namespace Rapido{
 
   include_once("src/Middleware.php");
@@ -10,8 +8,8 @@ namespace Rapido{
 
   // Router
   class Router extends \Router\Router{}
-  class Request extends \Router\Router{}
-  class Response extends \Router\Router{}
+  class Request extends \Router\Request{}
+  class Response extends \Router\Response{}
   // Middleware
   class Routes extends \Middleware\Routes{}
   class Sessions extends \Middleware\Sessions{}
@@ -23,7 +21,6 @@ namespace Rapido{
   class fs extends \Tools\FileSystem{}
   // Models
   class Error extends \Models\Error{}
-
 
 }
 ?>

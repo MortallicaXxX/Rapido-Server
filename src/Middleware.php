@@ -336,6 +336,16 @@ namespace Middleware{
     }
 
   }
+
+  class Cors extends Middleware{
+    function __construct(){
+
+    }
+
+    public function Program(){
+
+    }
+  }
 }
 
 ?>

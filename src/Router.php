@@ -170,15 +170,6 @@ namespace Router{
       $this -> _post[$globalChanel][join("", explode("/", $chanel))] = $callback;
     }
 
-    function isUser($body){
-
-      (new PHPClient()) -> Query("SELECT * FROM infoUsers WHERE login="."'".$body["user"]."'"." AND mdp="."'".sha1($body["mdp"])."'" , function($error,$result){
-        if($error || count($result) == 0)echo json_encode(array("result" => "false"));
-        else echo json_encode(array("result" => $result[0]["app_key"]));
-      });
-
-    }
-
     /**
       *Description :
     */
