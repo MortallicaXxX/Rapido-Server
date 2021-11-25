@@ -3,6 +3,10 @@
 namespace Middleware{
   include_once("Datastorage.php");
   include_once("Tools.php");
+  include_once("Models.php");
+
+  class Error extends \Models\Error{}
+
   /**
     *Name : Router
     *Type : Class
@@ -133,7 +137,10 @@ namespace Middleware{
     }
 
     public function Program($routeur){
-      $routeur["session"] = $_SESSION;
+      $routeur["session"] = function($key,$value){
+        $_SESSION[$key] = $value;
+        $this -> __copy_session_var();
+      };
       $this -> session_db_user = $this -> sessions_db -> collection(session_id());
 
       $this -> session_db_user -> find(array("session_id" => session_id()) , function($error,$result,$collection){
@@ -216,9 +223,9 @@ namespace Middleware{
 
     function Program($routeur){
 
-      $routeur["layout"] = function($fileName,$blockName){
+      $routeur["layout"] = function($fileName,$blockName,$variables){
         if($this -> __is_layout($fileName) == true){
-          echo $this -> __load_layout($fileName,$blockName);
+          echo $this -> __load_layout($fileName,$blockName,$variables);
         }
         else new Error($this -> ERROR["NOT_A_FILE"]);
       };
@@ -249,21 +256,24 @@ namespace Middleware{
     /**
       *Description : retourne un string représentant le contenu du fichier .layout
     */
-    private function __load_layout($fileName,$blockName){
-      return $this -> __make_layout_block((new \Tools\FileSystem()) -> read_file($this -> __layout_path."/".$fileName.".layout"),$blockName);
+    private function __load_layout($fileName,$blockName,$variables){
+      return $this -> __make_layout_block((new \Tools\FileSystem()) -> read_file($this -> __layout_path."/".$fileName.".layout"),$blockName,$variables);
     }
 
     /**
-      *Description : Conversion du block de string en tableau suivant la structure ["block_name" => [line,...],...]
+      *Description : Conversion du fichier .layout en tableau ayant identifier chaque block et leurs titre.
+      *$result {array} contient le résultat de la conversion du fichier en un array ayant identifier chaque block et leurs titre.
+      *$blockName {string} représente le nom du block souaité.
+      *$variables {array} contient les variables à injecter dans le layout.
     */
-    private function __make_layout_block($layout,$blockName){
+    private function __make_layout_block($layout,$blockName,$variables){
 
       $result = array();
       $block_title = "";
       $data_block = array();
 
       foreach(explode("\n",$layout) as $line){
-        $line = join("",preg_split('/\h{2,}/',$line));
+        $line = join("",preg_split('/\h{2,}/',$line)); // suppression des espaces
         if(strlen($line) > 0 && $line[0] == "#"){
           if(count($data_block) > 0){
             $result[$block_title] = $data_block;
@@ -278,18 +288,58 @@ namespace Middleware{
       $result[$block_title] = $data_block;
       $block_title = "";
       $data_block = array();
-      return $this -> __merge_layout_block($result,$blockName);
+      return $this -> __merge_layout_block($result,$blockName,$variables);
 
     }
 
     /**
-      *Description : Résous les liens entre layout.
+      *Description : Permet de modifier une partie de chaine de char dans un string par une valeur.
+      *$line {string} ligne contenant la chaine de char à modifier.
+      *$str_start {int} position de début de char.
+      *$str_end {int} position de fin de char.
+      *$value {string} varibale devant modifier la chaine de char.
     */
-    private function __merge_layout_block($result,$blockName){
+    private function __modify_string_range($line,$str_start,$str_end,$value){
+      $new_line = "";
+      $value_is_insert = false;
+      for($i = 0 ; $i < strlen($line) ; $i++){
+        if(($i > $str_start && $i < $str_end) == false)$new_line .= $line[$i];
+        else if ($value_is_insert == false){
+          $new_line .= "{$value}";
+          $value_is_insert = true;
+        }
+      }
+      return $new_line;
+    }
+
+    /**
+      *Description : Résous les injection de variable dans une ligne.
+      *$line {string} Chaine de string à modifier si contient des variables.
+      *$variables {array} contient les variables à injecter dans la ligne.
+    */
+    private function __add_variables_in_line($line,$variables){
+      if(strpos($line, "{@") !== false){
+        $start = strpos($line, "{"); // début de la première variable détectée
+        $end = strpos($line, "}"); // fin de la première variable détectée
+        $value_key = trim(join("",explode("@",join("",array_slice(str_split($line, 1), $start +1 , ($end - $start) - 1))))); // extraction du nom de variable
+        $line = $this -> __modify_string_range($line,$start-1,$end+1,$variables[$value_key]); // modification de la ligne
+      }
+      if(strpos($line, "{@") !== false)return $this -> __add_variables_in_line($line,$variables); // si une autre variable est détectée après modification
+      else return $line; // sinon retour de la ligne
+    }
+
+    /**
+      *Description : Résous les injection de variable et liens entre block.
+      *$result {array} contient le résultat de la conversion du fichier en un array ayant identifier chaque block et leurs titre.
+      *$blockName {string} représente le nom du block souaité.
+      *$variables {array} contient les variables à injecter dans le layout.
+    */
+    private function __merge_layout_block($result,$blockName,$variables){
 
       foreach ($result as $name => $lines) {
         for($i = 0 ; $i < count($lines) ; $i++){
-          $line = $lines[$i];
+          $line = $this -> __add_variables_in_line($lines[$i],$variables);
+          $result[$name][$i] = $line;
           if($line[0] == "{"){
             $title = trim(join("",explode("}",join("",explode("{#",$line)))));
             $result[$name][$i] = $result[$title];
@@ -302,7 +352,7 @@ namespace Middleware{
     }
 
     /**
-      *Description : Normalise les tableaux en une chaine de string.
+      *Description : Normalise les tableaux et sous tableaux en une chaine de string.
     */
     private function __normalise($layout_block){
       for($i = 0 ; $i < count($layout_block) ; $i++){
@@ -342,8 +392,8 @@ namespace Middleware{
 
     }
 
-    public function Program(){
-
+    public function Program($routeur){
+      return $routeur;
     }
   }
 }
