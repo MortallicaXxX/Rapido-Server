@@ -214,6 +214,7 @@ namespace Middleware{
     private $__layout_path;
     private $ERROR = array(
       "NOT_A_FILE" => "Aucun layout portant le nom demandé.",
+      "ARRAY_VALIDITY" => "La table de donnée ne semble pas valide pour le layout."
     );
 
     function __construct($layout_path){
@@ -223,7 +224,7 @@ namespace Middleware{
 
     function Program($routeur){
 
-      $routeur["layout"] = function($fileName,$blockName,$variables){
+      $routeur["layout"] = function($fileName,$blockName,$variables = null){
         if($this -> __is_layout($fileName) == true){
           echo $this -> __load_layout($fileName,$blockName,$variables);
         }
@@ -322,23 +323,35 @@ namespace Middleware{
         $start = strpos($line, "{"); // début de la première variable détectée
         $end = strpos($line, "}"); // fin de la première variable détectée
         $value_key = trim(join("",explode("@",join("",array_slice(str_split($line, 1), $start +1 , ($end - $start) - 1))))); // extraction du nom de variable
-        $line = $this -> __modify_string_range($line,$start-1,$end+1,$variables[$value_key]); // modification de la ligne
+        if(key_exists($value_key,$variables) == true)$line = $this -> __modify_string_range($line,$start-1,$end+1,$variables[$value_key]); // modification de la ligne
+        else return $line;
       }
       if(strpos($line, "{@") !== false)return $this -> __add_variables_in_line($line,$variables); // si une autre variable est détectée après modification
       else return $line; // sinon retour de la ligne
     }
 
     /**
-      *Description : Résous les injection de variable et liens entre block.
-      *$result {array} contient le résultat de la conversion du fichier en un array ayant identifier chaque block et leurs titre.
-      *$blockName {string} représente le nom du block souaité.
+      *Description : Permet de savoir si les variables injectée sont sous forme de tableau<liste<T>> ou de liste<T>
+      *$variables {array<list<T>> || list<T>} contient les variables à injecter dans le layout.
       *$variables {array} contient les variables à injecter dans le layout.
+      *$return {bool|null} True si tableau 2D | True si tableau 1D | Null si la donnée ne correspond pas.
     */
-    private function __merge_layout_block($result,$blockName,$variables){
+    private function __is_valid_array($variables){
+      if(is_array($variables) == false)return null;
+      $key1 = array_keys($variables)[0];
+      if(is_array($variables[$key1]) == false)return false;
+      else {
+        $key2 = array_keys($variables[$key1])[0];
+        if(is_array($variables[$key1][$key2]) == true)return null;
+        else return true;
+      }
+    }
 
+    private function __build_block($result,$variables){
       foreach ($result as $name => $lines) {
         for($i = 0 ; $i < count($lines) ; $i++){
-          $line = $this -> __add_variables_in_line($lines[$i],$variables);
+          $line = $lines[$i];
+          if($variables)$line = $this -> __add_variables_in_line($lines[$i],$variables);
           $result[$name][$i] = $line;
           if($line[0] == "{"){
             $title = trim(join("",explode("}",join("",explode("{#",$line)))));
@@ -346,6 +359,32 @@ namespace Middleware{
           }
         }
       }
+      return $result;
+    }
+
+    /**
+      *Description : Résous les injection de variable et liens entre block.
+      *$result {array<list<T>> || list<T>} contient le résultat de la conversion du fichier en un array ayant identifier chaque block et leurs titre.
+      *$blockName {string} représente le nom du block souaité.
+      *$variables {array} contient les variables à injecter dans le layout.
+    */
+    private function __merge_layout_block($result,$blockName,$variables){
+
+      if($variables){
+        $array_lalidity = $this -> __is_valid_array($variables);
+        if($array_lalidity === null)new Error($this -> ERROR["ARRAY_VALIDITY"]);
+        else if($array_lalidity == false)$result = $this -> __build_block($result,$variables);
+        else if($array_lalidity == true){
+            $new_result = array();
+            foreach ($variables as $variable) {
+              array_push($new_result,$this -> __build_block($result,$variable)[$blockName]);
+            }
+            $result[$blockName] = $new_result;
+        }
+      }
+      else $result = $this -> __build_block($result,$variables);
+
+      // var_dump($result[$blockName]);
 
       return $this -> __normalise($result[$blockName]);
 

@@ -100,17 +100,17 @@ namespace Tools{
       *Description :
     */
     function Connect(){
-      $this -> mysqli = new mysqli( "dl200022-001.dbaas.ovh.net:35748" , $this->_user , $this->_password , $this->_dbname);
+      $this -> mysqli = new \mysqli( "dl200022-001.dbaas.ovh.net:35748" , $this->_user , $this->_password , $this->_dbname);
       if($this -> mysqli -> connect_errno)$this -> onError("Erreur de connection à la base de donnée");
     }
 
     /**
       *Description :
     */
-    function Query($query,$callback){
+    function Query($query,$callback,$option=null){
       $resultQuery = $this -> mysqli -> query($query); // exécution query
       $error = (!$resultQuery ? $this -> mysqli -> error : null); // gestion erreur
-      $callback($error,$this -> Normalize($resultQuery)); // exécution du callBack
+      $callback($error,$this -> Normalize($resultQuery) , $option); // exécution du callBack
     }
 
     /**

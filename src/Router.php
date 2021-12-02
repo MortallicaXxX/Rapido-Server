@@ -28,7 +28,7 @@ namespace Router{
     /**
       *Description :
     */
-    public function send($data,$option){
+    public function send($data,$option = "text"){
       if($option == "text")$this -> sendText($data);
       else if($option == "json")$this -> sendJSON($data);
       else if($option == "file")$this -> sendFile($data);
@@ -125,15 +125,11 @@ namespace Router{
     */
     private function __open_chanel($method){
       $chanel = $this -> __get_chanel();
-      $path = array_filter(explode("/", $chanel),function($x){return $x;});
-      function recursive_find( $p , $m , $iterator = 1 ){
-        $key_Averif = $p[$iterator];
-        if(is_array($m[$key_Averif]) && key_exists($key_Averif,$m) == true)return recursive_find($p , $m[$key_Averif] , $iterator+1 );
-        else if(key_exists($key_Averif,$m) == true)return $m[$key_Averif];
-        else echo "chanel not fund";
-      }
+      $primaryChanel = $this -> __primary_chanel($chanel);
+      $secondaryChanel = $this -> __secondary_chanel($chanel);
 
-      return recursive_find($path,$method);
+      if(key_exists($primaryChanel,$method) == true && key_exists($secondaryChanel,$method[$primaryChanel]) == true)return $method[$primaryChanel][$secondaryChanel];
+      else echo "<p>chanel not fund<p>";
     }
 
     /**
@@ -153,21 +149,45 @@ namespace Router{
     }
 
     /**
+      *Description : Permet de connaitre le chanel de base
+      *Exemple : "localhost/test/blou/blou" = "test"
+    */
+    private function __primary_chanel($chanel){
+      $expl = explode("/", $chanel);
+      return (count($expl) > 1 ? $expl[1] : $expl[0]);
+    }
+
+    /**
+      *Description : Permet de connaitre le chanel de base
+      *Exemple : "localhost/test/blou/blou" = "blou/blou"
+    */
+    private function __secondary_chanel($chanel){
+      $expl = explode("/", $chanel);
+      $toReturn = (count($expl) > 2 ? $expl[2] : $expl[1]);
+      for($i = 0 ; $i < count($expl) ; $i++){
+        if($i > 2)$toReturn .= "/".$expl[$i];
+      }
+      return $toReturn;
+    }
+
+    /**
       *Description :
     */
     function get($chanel,$callback){
-      $globalChanel = join("", explode("/", $GLOBALS["chanel"]));
-      if(key_exists($globalChanel,$this -> _get) == false)$this -> _get[$globalChanel] = array();
-      $this -> _get[$globalChanel][join("", explode("/", $chanel))] = $callback;
+      $primaryChanel = (key_exists("chanel",$GLOBALS) == true && $GLOBALS["chanel"] != null && $GLOBALS["chanel"] != "/" ? $this -> __primary_chanel($GLOBALS["chanel"].$chanel) : $this -> __primary_chanel($chanel));
+      $secondaryChanel = (key_exists("chanel",$GLOBALS) == true && $GLOBALS["chanel"] != null && $GLOBALS["chanel"] != "/" ? $this -> __secondary_chanel($GLOBALS["chanel"].$chanel) : $this -> __secondary_chanel($chanel));
+      if(key_exists($primaryChanel,$this -> _get) == false)$this -> _get[$primaryChanel] = array();
+      $this -> _get[$primaryChanel][$secondaryChanel] = $callback;
     }
 
     /**
       *Description :
     */
     function post($chanel,$callback){
-      $globalChanel = join("", explode("/", $GLOBALS["chanel"]));
-      if(key_exists($globalChanel,$this -> _post) == false)$this -> _post[$globalChanel] = array();
-      $this -> _post[$globalChanel][join("", explode("/", $chanel))] = $callback;
+      $primaryChanel = (key_exists("chanel",$GLOBALS) == true && $GLOBALS["chanel"] != null && $GLOBALS["chanel"] != "/" ? $this -> __primary_chanel($GLOBALS["chanel"].$chanel) : $this -> __primary_chanel($chanel));
+      $secondaryChanel = (key_exists("chanel",$GLOBALS) == true && $GLOBALS["chanel"] != null && $GLOBALS["chanel"] != "/" ? $this -> __secondary_chanel($GLOBALS["chanel"].$chanel) : $this -> __secondary_chanel($chanel));
+      if(key_exists($primaryChanel,$this -> _post) == false)$this -> _post[$primaryChanel] = array();
+      $this -> _post[$primaryChanel][$secondaryChanel] = $callback;
     }
 
     /**

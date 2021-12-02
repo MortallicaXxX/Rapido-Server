@@ -19,6 +19,7 @@ namespace Rapido{
   class Datastorage extends \Datastorage\DB{}
   // Tools
   class fs extends \Tools\FileSystem{}
+  class SQLI extends \Tools\SQLIClient{}
   // Models
   class Error extends \Models\Error{}
 
