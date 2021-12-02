@@ -84,11 +84,11 @@ namespace Tools{
   */
   class SQLIClient{
 
-    private $_host = "dl200022-001.dbaas.ovh.net";
-    private $_port = "35748";
-    private $_user = "guigui";
-    private $_password = "PtW143kjkS3F";
-    private $_dbname = "userInfoBd";
+    private $_host = "";
+    private $_port = "";
+    private $_user = "";
+    private $_password = "";
+    private $_dbname = "";
 
     private $mysqli;
 
@@ -100,7 +100,7 @@ namespace Tools{
       *Description :
     */
     function Connect(){
-      $this -> mysqli = new \mysqli( "dl200022-001.dbaas.ovh.net:35748" , $this->_user , $this->_password , $this->_dbname);
+      $this -> mysqli = new \mysqli( "" , $this->_user , $this->_password , $this->_dbname);
       if($this -> mysqli -> connect_errno)$this -> onError("Erreur de connection à la base de donnée");
     }
 
