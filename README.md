@@ -1,5 +1,5 @@
-# rapido
-php library
+# rapido [![Cult Of Martians][cult-img]][cult]
+Rapido est une librairie php ayant pour but de centraliser et déléguer les requêtes entrantes.
 
 # Size Limit [![Cult Of Martians][cult-img]][cult]
 
