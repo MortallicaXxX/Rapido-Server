@@ -7,6 +7,15 @@ Premièrement Rapido a été imaginer sur le modèle de nodeJS, les personnes ma
 Sinon n'importe quel développeur peut avoir interet à utiliser Rapio , il offre une gestion complète de fichier , les messages entrants sont dirigée avec des "chanels" offrant de nombreuses options afin d'interagir avec le message entrant et de nombreux moyen de répondre.
 Très rapide pour mettre des api en place.
 
+## How It Works
+1. Rapido contient { `Router` } comme corp principale { `Middleware` , `Tools` , `Models` } comme "utilitaire".
+2. `Router` est le corp de rapido, il permet la gestion et mise en place des "chanels" , d'utiliser des middleware et c'est lui qui handle la requete entrante.
+3. `Middleware` est le plugin permetant d'ajouter des fonctionnalitée à la manière dont la requete est gérée. Si le concept de middleware vous t'es inconus une partie t'expliquant ca est juste ici en dessous.
+
+## What is a Middleware for Rapido
+1. Un middleware est un sous processus du processus principale exécuté l'ors de la reception d'une requete et qui possède un accès au routeur et à ses variables environementales. Un middleware peut s'exécuter deux fois l'ors d'une requete , la première fois est l'orsqu'il est utliser par router au moyen de Router.use qui exécutera `__construct` du middleware , ensuite l'orsque la requete est handle le middleware sera exécuter la méthode public `Program` du middleware serra éxecuter.
+2. Les parametres passant dans `__construct` et `Program` sont différent permatant l'ors de l'initialisation du middleware et l'ors de sont exécution d'effectuer des tâches différentes et de modifier ou ajouter des parametre au routeur utilisable plus loins par les chanels.
+
 # Size Limit [![Cult Of Martians][cult-img]][cult]
 
 <img src="https://ai.github.io/size-limit/logo.svg" align="right"
