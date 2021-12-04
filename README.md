@@ -1,5 +1,11 @@
 # rapido [![Cult Of Martians][cult-img]][cult]
-Rapido est une librairie php ayant pour but de centraliser et déléguer les requêtes entrantes.
+Rapido est une librairie php ayant pour but de centraliser et déléguer des requêtes entrantes, se veut rapide et léger , offre un système basique de gestion de l'information performant ainsi qu'une bibilothèque integrée offrant de nombreuse fonctionnalitée. Introduit les middleware permetant d'ajouter des fonctionnalitées au "Rapido Router" sans modifier le code du routeur lui même.
+Normalise la manière de travailler en php permettant une meilleur maintabilitée du code sur le long terme.
+
+## Who Uses Rapido
+Premièrement Rapido a été imaginer sur le modèle de nodeJS, les personnes maîtrisant Express ne serront pas dépaysé !
+Sinon n'importe quel développeur peut avoir interet à utiliser Rapio , il offre une gestion complète de fichier , les messages entrants sont dirigée avec des "chanels" offrant de nombreuses options afin d'interagir avec le message entrant et de nombreux moyen de répondre.
+Très rapide pour mettre des api en place.
 
 # Size Limit [![Cult Of Martians][cult-img]][cult]
 
