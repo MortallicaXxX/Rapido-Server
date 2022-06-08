@@ -2,6 +2,20 @@
 
 namespace Router{
 
+  interface IRequest{
+
+  }
+
+  interface IResponse{
+
+    public function send(String $data,String $option);
+    public function sendText(string $text);
+    public function sendJSON(array $arrayJson);
+    public function sendFile(string $pathToFile);
+    public function toDownload(string $pathToFile);
+
+  }
+
   /**
     *Name : Router
     *Type : Class
@@ -9,7 +23,7 @@ namespace Router{
     *Use-case :
     *Sample :
   */
-  class Request{
+  class Request implements IRequest{
     function __construct($router){
       foreach (array_keys($router) as $key) {
         $this->{$key} =  $router[$key];
@@ -24,7 +38,7 @@ namespace Router{
     *Use-case :
     *Sample :
   */
-  class Response{
+  class Response implements IResponse{
     /**
       *Description :
     */
@@ -32,27 +46,36 @@ namespace Router{
       if($option == "text")$this -> sendText($data);
       else if($option == "json")$this -> sendJSON($data);
       else if($option == "file")$this -> sendFile($data);
+      else if($option == "ddl")$this -> toDownload($data);
       else throw "option not correct";
     }
 
     /**
       *Description :
     */
-    private function sendText($text){
+    public function sendText($text){
+      header("Content-Type: text/plain; charset=UTF-8");
       echo $text;
     }
 
     /**
       *Description :
     */
-    private function sendJSON($arrayJson){
+    public function sendJSON($arrayJson){
+      header('Content-Type: application/json');
       echo json_encode($arrayJson);
     }
 
     /**
       *Description :
     */
-    private function sendFile($pathToFile,$ext = "json"){
+    public function sendFile($pathToFile){
+      if (file_exists($pathToFile)) {
+        echo file_get_contents($pathToFile);
+      }
+    }
+
+    public function toDownload($pathToFile){
       if (file_exists($pathToFile)) {
           header('Content-Description: File Transfer');
           header('Content-Type: application/octet-stream');
@@ -61,7 +84,7 @@ namespace Router{
           header('Cache-Control: must-revalidate');
           header('Pragma: public');
           header('Content-Length: ' . filesize($pathToFile));
-          readfile($pathToFile);
+          var_dump(readfile($pathToFile));
           exit;
       }
     }
@@ -76,7 +99,7 @@ namespace Router{
   */
   class Router{
 
-    private $routeur;
+    public $routeur;
     private $_get = array(); /** @author contient la liste des get */
     private $_post = array(); /** @desc contient la liste des post */
     private $_middleware = array();
@@ -89,6 +112,7 @@ namespace Router{
       *Description :
     */
     function handle(){
+      $this -> __handle_navigate();
       $this -> __handle_middleware();
       if ($this -> routeur["REQUEST_METHOD"] == "GET") {
         $this -> __delegate_get();
@@ -96,6 +120,20 @@ namespace Router{
       if ($this -> routeur["REQUEST_METHOD"] == "POST") {
         $this -> __delegate_post();
       }
+    }
+
+    /**
+      *Description :
+    */
+    private function __handle_navigate(){
+      if (!function_exists('str_contains')) {
+          function str_contains(string $haystack, string $needle): bool
+          {
+              return '' === $needle || false !== strpos($haystack, $needle);
+          }
+          if(str_contains($this -> routeur["REQUEST_URI"], "chanel") == false)header('Location: index.php?chanel=/');
+      }
+      else if(str_contains($this -> routeur["REQUEST_URI"], "chanel") == false)header('Location: index.php?chanel=/');
     }
 
     /**

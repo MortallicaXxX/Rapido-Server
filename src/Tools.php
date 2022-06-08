@@ -84,15 +84,20 @@ namespace Tools{
   */
   class SQLIClient{
 
-    private $_host = "";
-    private $_port = "";
-    private $_user = "";
-    private $_password = "";
-    private $_dbname = "";
+    private $_host;
+    private $_port;
+    private $_user;
+    private $_password;
+    private $_dbname;
 
     private $mysqli;
 
-    function __construct(){
+    function __construct($host,$port,$user,$password,$db){
+      $this -> _host = $host;
+      $this -> _port = $port;
+      $this -> _user = $user;
+      $this -> _password = $password;
+      $this -> _dbname = $db;
       $this -> Connect();
     }
 
@@ -100,17 +105,26 @@ namespace Tools{
       *Description :
     */
     function Connect(){
-      $this -> mysqli = new \mysqli( "" , $this->_user , $this->_password , $this->_dbname);
-      if($this -> mysqli -> connect_errno)$this -> onError("Erreur de connection à la base de donnée");
+      $this -> mysqli = new \mysqli( $this -> _host , $this->_user , $this->_password , $this->_dbname , $this -> _port );
+      \mysqli_set_charset($this -> mysqli,"utf8");
+      if($this -> mysqli -> connect_errno){
+        $this -> onError($this -> mysqli -> connect_error);
+      }
+    }
+
+    function Set_Option($key,$value){
+      if($key == "charset")mysqli_set_charset($this -> mysqli,"utf8");
     }
 
     /**
       *Description :
     */
-    function Query($query,$callback,$option=null){
+    function Query($query,$callback=null,$option=null){
       $resultQuery = $this -> mysqli -> query($query); // exécution query
       $error = (!$resultQuery ? $this -> mysqli -> error : null); // gestion erreur
-      $callback($error,$this -> Normalize($resultQuery) , $option); // exécution du callBack
+      if($callback)$callback($error,$this -> Normalize($resultQuery) , $this , $option); // exécution du callBack
+      else if($error)return $error;
+      else return $this -> Normalize($resultQuery);
     }
 
     /**
@@ -129,7 +143,7 @@ namespace Tools{
       *Description :
     */
     function Close(){
-
+      $this -> mysqli -> close();
     }
 
     /**
@@ -140,6 +154,69 @@ namespace Tools{
     }
 
   }
+
+  class URLRequest{
+
+    private $_url;
+    private $options;
+
+    function __construct($url,$options,$callback=null,$arg=null){
+      $this -> _url = $url;
+      $this -> options = $options;
+    }
+
+    function get(){
+
+      $curl = curl_init($this -> _url);
+      curl_setopt($curl, CURLOPT_URL, $this -> _url);
+      curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+
+      curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
+      curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+
+      $resp = curl_exec($curl);
+      curl_close($curl);
+      return $resp;
+
+    }
+
+    function post($data){
+
+      $curl = curl_init($this -> _url);
+      curl_setopt($curl, CURLOPT_URL, $this -> _url);
+      curl_setopt($curl, CURLOPT_POST, true);
+      curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+
+      $headers = array(
+         "Content-Type: application/json",
+      );
+      curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+      curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($data));
+
+      curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
+      curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+
+      $resp = curl_exec($curl);
+      curl_close($curl);
+      return $resp;
+
+    }
+
+    function exec($callback=null){
+      if($callback){
+        if($this -> options["method"] == "GET")$callback($this -> get(),$arg);
+        if($this -> options["method"] == "POST")$callback($this -> post(
+              (array_key_exists("body",$this -> options) ? $this -> options["body"] : array())
+            ),$arg);
+      }
+      else{
+        if($this -> options["method"] == "GET")return $this -> get();
+        if($this -> options["method"] == "POST")return $this -> post((array_key_exists("body",$this -> options) ? $this -> options["body"] : array()));
+      }
+    }
+
+  }
+
 }
 
 ?>

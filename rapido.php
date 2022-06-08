@@ -15,11 +15,13 @@ namespace Rapido{
   class Sessions extends \Middleware\Sessions{}
   class BodyParser extends \Middleware\BodyParser{}
   class Layout extends \Middleware\Layout{}
+  class DotEnv extends \Middleware\DotEnv{}
   // Datastorage
   class Datastorage extends \Datastorage\DB{}
   // Tools
   class fs extends \Tools\FileSystem{}
   class SQLI extends \Tools\SQLIClient{}
+  class Fetch extends \Tools\URLRequest{}
   // Models
   class Error extends \Models\Error{}
 

@@ -130,17 +130,73 @@ namespace Middleware{
 
     private $sessions_db;
     private $session_db_user;
+    private $sessions_path;
 
     function __construct($sessions_path){
       $this -> __start_session();
+      $this -> sessions_path = $sessions_path;
       $this -> sessions_db = new \Datastorage\DB($sessions_path);
     }
 
     public function Program($routeur){
-      $routeur["session"] = function($key,$value){
+
+      $_SESSION["_EventTime"] = time();
+
+      $routeur["addKeySession"] = function($key,$value){
         $_SESSION[$key] = $value;
         $this -> __copy_session_var();
       };
+
+      $routeur["deleteKeySession"] = function($dataToDelete){
+        return ($this -> sessions_db -> collection(session_id())) -> delete(array("session_id" => session_id()),$dataToDelete,function($error,$result,$client){
+          $client -> save_file_integrity();
+          $this -> __retrieve_session();
+        });
+      };
+
+      $routeur["getSession"] = ((new \Datastorage\DB("./sessions")) -> collection(session_id())) -> find(array("session_id" => session_id()));
+
+      $routeur["mergeSession"] = function($filter){
+        $session = (((new \Datastorage\DB("./sessions")) -> collection(session_id())) -> find(array("session_id" => session_id())))[0];
+        $collections = (new \Datastorage\DB("./sessions")) -> collection_list();
+
+        function compare($src1,$src2,$filter){
+          $c = array();
+          foreach ($filter as $key => $value) {
+            if(is_array($value) && in_array($key , array_keys(get_object_vars($src1))) && in_array($key , array_keys(get_object_vars($src2))))array_push($c,compare($src1 -> {$key},$src2 -> {$key},$filter[$key]));
+            else if($src1 -> {$value} == $src2 -> {$value})array_push($c,true);
+            else array_push($c,false);
+          }
+          return !in_array(false,$c);
+        }
+
+        function merge($old,$_sess_var){
+          foreach ($old as $key => $value) {
+            if ($key != "session_id" && $key != "_id" && $key != "_EventTime" ){
+              if(is_object($value) && in_array($key,array_keys($_sess_var)) == false)$_sess_var[$key] = array();
+              if(is_object($value))$_sess_var[$key] = merge($value,$_sess_var[$key]);
+              else {
+                $_sess_var[$key] = $value;
+              }
+            }
+          }
+          return $_sess_var;
+        }
+
+        foreach ($collections as $key => $collection) {
+          if($collection != $session -> session_id){
+            $s = (((new \Datastorage\DB("./sessions")) -> collection($collection)) -> find(array()))[0];
+            if(compare($session,$s,$filter) == true){
+              unlink("./sessions/".$s -> session_id.".store");
+              $_SESSION = merge($s,$_SESSION);
+            }
+          }
+        }
+
+        $this -> __copy_session_var();
+
+      };
+
       $this -> session_db_user = $this -> sessions_db -> collection(session_id());
 
       $this -> session_db_user -> find(array("session_id" => session_id()) , function($error,$result,$collection){
@@ -150,6 +206,7 @@ namespace Middleware{
           $collection -> save_file_integrity();
         });
       });
+
       $this -> __copy_session_var();
 
       return $routeur;
@@ -161,6 +218,21 @@ namespace Middleware{
       });
     }
 
+    private function __clear_session(){
+      session_destroy();
+    }
+
+    /**
+    * Description : Recupere la session depuis le .store
+    */
+    private function __retrieve_session(){
+      $this -> __clear_session();
+      $this -> session_db_user -> find(array("session_id" => session_id()),function($error,$result,$collection){
+        if($result)foreach ($result[0] as $key => $value) {
+          $_SESSION[$key] = $value;
+        }
+      });
+    }
 
     /**
       *Description :
@@ -188,7 +260,10 @@ namespace Middleware{
   class BodyParser extends Middleware{
 
     public function Program($routeur){
-      if($routeur["REQUEST_METHOD"] == "POST")$routeur["body"] = $this -> __body();
+      if($routeur["REQUEST_METHOD"] == "POST"){
+        $body = $this -> __body();
+        $routeur["body"] = $body;
+      }
       return $routeur;
     }
 
@@ -197,7 +272,8 @@ namespace Middleware{
     */
     private function __body(){
       $data = json_decode(file_get_contents('php://input'), true);
-      return $data;
+      if(is_null($data))$data = array();
+      return (array_key_exists("body",$data) ? $data["body"] : $data);
     }
 
   }
@@ -435,6 +511,47 @@ namespace Middleware{
       return $routeur;
     }
   }
+
+  class DotEnv extends Middleware{
+
+    private $filePath;
+
+    function __construct($filePath){
+      $this -> filePath = $filePath;
+    }
+
+    function Program($router){
+      if($this -> __is_file_exist() == true){
+        $router["dotenv"] = $this -> __load_file();
+      }
+      return $router;
+    }
+
+    private function __is_file_exist(){
+      return is_file($this -> filePath);
+    }
+
+    private function __load_file(){
+      return $this -> __normalize((new \Tools\FileSystem()) -> read_file($this -> filePath));
+    }
+
+    private function __normalize($strFile){
+      $lines = array_filter(explode("\n",$strFile), function($item){return $item;});
+      $result = array();
+      for($i = 0 ; $i < count($lines) ; $i++){
+        $keyLine = array_keys($lines)[$i];
+        $lines[$keyLine] = explode("=",$lines[$keyLine]);
+        for($y = 0; $y < count($lines[$keyLine]); $y++) {
+          $keyCell = array_keys($lines[$keyLine])[$y];
+          $lines[$keyLine][$keyCell] = trim($lines[$keyLine][$keyCell]);
+        }
+        $result[$lines[$keyLine][0]] = $lines[$keyLine][1];
+      }
+      return $result;
+    }
+
+  }
+
 }
 
 ?>

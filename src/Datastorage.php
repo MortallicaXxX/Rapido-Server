@@ -24,9 +24,9 @@ namespace Datastorage{
 
 
   /**
-    *Name : Router
+    *Name : GUID
     *Type : Class
-    *Description :
+    *Description : Gestionaire d'ID pour la DB
     *Use-case :
     *Sample :
   */
@@ -62,11 +62,11 @@ namespace Datastorage{
   }
 
   /**
-    *Name : Router
-    *Type : Class
-    *Description :
-    *Use-case :
-    *Sample :
+    * Name : Collection
+    * Type : Class
+    * Description :
+    * Use-case :
+    * Sample :
   */
   class Collection{
 
@@ -91,7 +91,7 @@ namespace Datastorage{
     }
 
     /**
-      *Description :
+    * Description : Insert d'un objet.
     */
     public function insert($data,$callback = null){
 
@@ -115,7 +115,7 @@ namespace Datastorage{
     }
 
     /**
-      *Description :
+    * Description : Recherche d'un objet.
     */
     public function find($filter,$callback = null){
 
@@ -142,7 +142,7 @@ namespace Datastorage{
     }
 
     /**
-      *Description :
+    * Description : Mise à jour d'un champ
     */
     public function update($filter,$data,$callback=null){
 
@@ -172,17 +172,31 @@ namespace Datastorage{
     }
 
     /**
-      *Description :
+    * Description : Delete d'un champ d'un objet.
     */
-    public function delete($filter,$callback=null){
+    public function delete($filter,$dataToDelete,$callback=null){
       $result = $this -> find($filter);
-      if(count($result) > 0)unset($this->storage->{$result[0] -> _id});
-      if($callback)$callback("Error",in_array((array_keys(get_object_vars($this -> storage)))),$this);
-      else return in_array((array_keys(get_object_vars($this -> storage))));
+      $guid = $result[0] -> _id;
+
+      foreach($dataToDelete as $key => $value){
+        var_dump($key);
+        $x = $this -> __find_field($dataToDelete,$key,$this -> storage -> {$guid});
+        var_dump($x);
+        if($x != NULL){
+          unset($x["object"] -> {$x["key"]});
+        }
+      }
+
+      if($callback)$callback(NULL,NULL,$this);
+      else return NULL;
+
+      // if(count($result) > 0)unset($this->storage->{$result[0] -> _id});
+      // if($callback)$callback("Error",array_keys(get_object_vars($this -> storage)),$this);
+      // else return (array_keys(get_object_vars($this -> storage)));
     }
 
     /**
-      *Description :
+    * Description : Vide le fichier représentant la collection.
     */
     public function dump(){
       $path_info = pathinfo($this -> path_storage);
@@ -192,21 +206,23 @@ namespace Datastorage{
     }
 
     /**
-      *Description :
+    * Description : Transforme un array en std::class
     */
     private function __array_to_object($array){
-      $object = new \stdClass();
-      foreach ($array as $key => $value) {
-          if (is_array($value)) {
-              $value = convertToObject($value);
-          }
-          $object->$key = $value;
-      }
-      return $object;
+      // $object = new \stdClass();
+      // foreach ($array as $key => $value) {
+      //     if (is_array($value)) {
+      //         $value = convertToObject($value);
+      //     }
+      //     $object->$key = $value;
+      // }
+      // return $object;
+
+      return (object) $array;
     }
 
     /**
-      *Description :
+    * Description : Assigne une key et une valeur à un objet.
     */
     private function __object_assign($obj1,$obj2){
       foreach (array_keys(get_object_vars($obj2)) as $key) {
@@ -216,7 +232,7 @@ namespace Datastorage{
     }
 
     /**
-      *Description :
+    * Description : Permet d'effectuer une comparaison entre deux valeurs.
     */
     private function compare_value($filter_value,$source_value){
       if(is_object($filter_value))return $this -> compare_object($filter_value,$source_value);
@@ -224,7 +240,23 @@ namespace Datastorage{
     }
 
     /**
-      *Description :
+    * Description : Retourne une référence de propriété similaire à celle d'un filtre
+    */
+    private function __find_field($filter,$key,$object){
+
+      if(is_object($filter[$key]) || is_array($filter[$key])){
+        // if(is_array($filter[$key]))return array("object" => $object , "key" => $key , "value" => $object -> {$key});
+        foreach($filter[$key] as $k => $value){
+          return $this -> __find_field($filter[$key],$k,$object -> {$key});
+        }
+      }
+      else return array("object" => $object , "key" => $key , "value" => $object -> {$key});
+      // else return NULL;
+
+    }
+
+    /**
+    * Description : Permet d'effectuer une comparaison entre deux objets.
     */
     private function compare_object($filter,$source){
       $filter_keys = array_keys(get_object_vars($filter));
@@ -242,7 +274,7 @@ namespace Datastorage{
     }
 
     /**
-      *Description :
+    * Description : chargement du contenu du fichier dans l'objet storage.
     */
     private function __load_file(){
       $this -> storage = json_decode(file_get_contents($this -> path_storage.".store"));
@@ -250,14 +282,14 @@ namespace Datastorage{
     }
 
     /**
-      *Description :
+    * Description : Le fichier .store existe t-il ?
     */
     private function __is_file_exist(){
       return (file_exists($this -> path_storage.".store") ? true : false);
     }
 
     /**
-      *Description :
+    * Description : création du fichier .store manquant
     */
     private function __create_missing_file(){
       $path_info = pathinfo($this -> path_storage);
@@ -267,7 +299,7 @@ namespace Datastorage{
     }
 
     /**
-      *Description :
+    * Description : Vérification de l'integrité du fichier - existe t-il ? création de celui-ci si n'existe pas.
     */
     private function __verifyIntegrity(){
       if($this -> __is_file_exist() == false){
@@ -277,13 +309,13 @@ namespace Datastorage{
     }
 
     /**
-      *Description :
+    * Description : Sauvegarde de l'objet storage dans un fichier en format JSON
     */
     function save_file_integrity(){
       if($this -> parsed == true){
         $path_info = pathinfo($this -> path_storage);
         $file = fopen($this -> path_storage.".store", "w") or die("Unable to open file!");
-        fwrite($file, json_encode($this -> storage));
+        fwrite($file, json_encode($this -> storage,JSON_PRETTY_PRINT));
         fclose($file);
       }
       else new Error($this -> ERROR["SAVE_PARSE"]);
@@ -319,10 +351,16 @@ namespace Datastorage{
       *Description :
     */
     public function collection_list(){
-      return array_filter(scandir($this -> db_path),function($filePath){
+      $x = array_filter(scandir($this -> db_path),function($filePath){
         $path_info = pathinfo($filePath);
-        if($path_info['extension'] == "storage")return $filePath['filename'];
+        if($path_info['extension'] == "store")return $path_info['filename'];
       });
+
+      foreach ($x as $key => $value) {
+        $x[$key] = explode(".store",$x[$key])[0];
+      }
+
+      return $x;
     }
 
     /**
