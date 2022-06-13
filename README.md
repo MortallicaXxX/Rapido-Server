@@ -3,7 +3,7 @@
 ⛔️ It's a student project ⛔️
 
 ## What is Rapido ?
-Rapido is a PHP framework that allow you to use your php server like nodejs one.
+Rapido is a PHP framework that allow you to use your php server like express with nodejs.
 
 ## How that take place ?
 Rapido provide two concept.
