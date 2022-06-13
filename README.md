@@ -50,7 +50,7 @@ console.log(await response.text());
 ```
 
 ### - Middleware
-Rapido provide a middleware engine that allow to any developper to create sub program that is executed by the server and to change the way that the server is running. Through middleware you can do what you want.
+Rapido provide a middleware engine that allow to any developper to create sub program that is executed by the server and to change the way that the router is running. Through middleware you can do what you want.
 
 How use middleware.
 ```PHP
@@ -71,3 +71,5 @@ $App -> use( BodyParser::class );
 $App -> handle();
 ?>
 ```
+
+More about rapido middleware ? https://github.com/MortallicaXxX/Rapido-Middleware for more details.
