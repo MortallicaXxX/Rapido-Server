@@ -63,7 +63,7 @@ namespace Router{
     */
     public function sendJSON($arrayJson){
       header('Content-Type: application/json');
-      echo json_encode($arrayJson);
+      echo json_encode($arrayJson , JSON_PRETTY_PRINT );
     }
 
     /**

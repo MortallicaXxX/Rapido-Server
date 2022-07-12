@@ -5,7 +5,7 @@
 ## What is Rapido ?
 Rapido is a PHP framework that allow you to use your php server like express with nodejs.
 
-## How that take place ?
+## How use rapido ?
 Rapido provide two concept.
 
 ### - Chanel and chanel-callback
