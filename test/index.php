@@ -19,15 +19,26 @@ $App -> get('/test/ressource' , function($req , $res){
 });
 
 $App -> get('/test/:ressource' , function($req , $res){
-    $res -> send('test "/test/:ressource" dynamic route','text');
+
+    $ressource = $req -> dynamicPath -> var["ressource"];
+
+    $res -> send("dynamic route test at /test/$ressource",'text');
 });
 
 $App -> get('/test/:ressource/by/:option' , function($req , $res){
-    $res -> send('test "/test/:ressource/by/:option" dynamic route','text');
+
+    $ressource = $req -> dynamicPath -> var["ressource"];
+    $option = $req -> dynamicPath -> var["option"];
+
+    $res -> send("dynamic route test at  /test/$ressource/by/$option",'text');
 });
 
 $App -> get('/test/:ressource/:option/details' , function($req , $res){
-    $res -> send('test "/test/:ressource/:option/details" dynamic route','text');
+
+    $ressource = $req -> dynamicPath -> var["ressource"];
+    $option = $req -> dynamicPath -> var["option"];
+
+    $res -> send("dynamic route test at /test/$ressource/$option/details",'text');
 });
 
 $App -> handle();

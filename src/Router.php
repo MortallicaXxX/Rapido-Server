@@ -90,6 +90,22 @@ namespace Router{
     }
   }
 
+  class DynamicPath extends \stdClass{
+
+    public $var = array();
+    function __construct(string $chanel , string $url){
+      $c = \explode('/',$chanel);
+      $u = \explode('/',$url);
+      foreach ($u as $iterator => $value) {
+        if(str_contains($c[$iterator],':') == true){
+          $key = \explode(':',$c[$iterator])[1];
+          $this -> var[$key] = $value;
+        }
+      }
+    }
+
+  }
+
   /**
     *Name : Router
     *Type : Class
@@ -192,7 +208,10 @@ namespace Router{
       else if(key_exists($primaryChanel,$method) == true){
         $subChanels = $method[$primaryChanel];
         foreach ($subChanels as $chanel => $options) {
-          if($this -> __isDynamicalChanel($chanel) && /*( \count(\explode('/',$secondaryChanel)) == \count(\explode('/',$chanel)))*/ $this -> __isSameDynamicChanelDNA($secondaryChanel , $chanel) )return $method[$primaryChanel][$chanel];
+          if($this -> __isDynamicalChanel($chanel) && /*( \count(\explode('/',$secondaryChanel)) == \count(\explode('/',$chanel)))*/ $this -> __isSameDynamicChanelDNA($secondaryChanel , $chanel) ){
+            $this -> routeur["dynamicPath"] = new DynamicPath($chanel ,$secondaryChanel);
+            return $method[$primaryChanel][$chanel];
+          }
         }
       }
       else echo "<p>chanel not fund<p>";
