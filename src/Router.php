@@ -182,21 +182,21 @@ namespace Router{
       *Description :
     */
     private function __open_chanel($method){
+
       $chanel = $this -> __get_chanel();
       $primaryChanel = $this -> __primary_chanel($chanel);
       $secondaryChanel = $this -> __secondary_chanel($chanel);
 
-      // var_dump($secondaryChanel);
-      // var_dump($this -> isDynamicalChanel($secondaryChanel));
 
       if(key_exists($primaryChanel,$method) == true && key_exists($secondaryChanel,$method[$primaryChanel]) == true)return $method[$primaryChanel][$secondaryChanel];
       else if(key_exists($primaryChanel,$method) == true){
         $subChanels = $method[$primaryChanel];
         foreach ($subChanels as $chanel => $options) {
-          if($this -> isDynamicalChanel($chanel) && ( \count(\explode('/',$secondaryChanel)) == \count(\explode('/',$chanel))) )return $method[$primaryChanel][$chanel];
+          if($this -> __isDynamicalChanel($chanel) && /*( \count(\explode('/',$secondaryChanel)) == \count(\explode('/',$chanel)))*/ $this -> __isSameDynamicChanelDNA($secondaryChanel , $chanel) )return $method[$primaryChanel][$chanel];
         }
       }
       else echo "<p>chanel not fund<p>";
+
     }
 
     /**
@@ -278,15 +278,29 @@ namespace Router{
     }
 
     /** Retourne true | false si il s'agit d'une url dynamique */
-    private function isDynamicalChanel(string $chanel):bool{
-      return (\count(\explode(':',$chanel)) > 1 ? true : false); 
+    private function __isDynamicalChanel(string $chanel):bool{
+      return str_contains($chanel, ":");
+    }
+
+    /** Retourne true | false si il s'agit de deux même addresse url */
+    private function __isSameDynamicChanelDNA(string $chanel1 , string $chanel2):bool{
+      $dna = array();
+      $c1 = \explode('/' , $chanel1);
+      $c2 = \explode('/' , $chanel2);
+      if( \count($c1) != \count($c2))return false;
+      else foreach ($c1 as $iterator => $str) {
+        $arn = ( $this -> __isDynamicalChanel($c1[$iterator]) == true || $this -> __isDynamicalChanel($c2[$iterator]) == true ? 1 : (
+          $c1[$iterator] == $c2[$iterator] ? 1 : 0
+        ));
+        array_push($dna , $arn);
+      }
+      return !in_array(0,$dna);
     }
 
     /**
       *Description :
     */
     function get($chanel,$callback){
-      $isDynmicalChanel = $this -> isDynamicalChanel($chanel);
       $primaryChanel = (key_exists("chanel",$GLOBALS) == true && $GLOBALS["chanel"] != null && $GLOBALS["chanel"] != "/" ? $this -> __primary_chanel($GLOBALS["chanel"].$chanel) : $this -> __primary_chanel($chanel));
       $secondaryChanel = (key_exists("chanel",$GLOBALS) == true && $GLOBALS["chanel"] != null && $GLOBALS["chanel"] != "/" ? $this -> __secondary_chanel($GLOBALS["chanel"].$chanel) : $this -> __secondary_chanel($chanel));
       if(key_exists($primaryChanel,$this -> _get) == false)$this -> _get[$primaryChanel] = array();
