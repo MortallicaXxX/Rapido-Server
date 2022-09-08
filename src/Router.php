@@ -186,7 +186,16 @@ namespace Router{
       $primaryChanel = $this -> __primary_chanel($chanel);
       $secondaryChanel = $this -> __secondary_chanel($chanel);
 
+      // var_dump($secondaryChanel);
+      // var_dump($this -> isDynamicalChanel($secondaryChanel));
+
       if(key_exists($primaryChanel,$method) == true && key_exists($secondaryChanel,$method[$primaryChanel]) == true)return $method[$primaryChanel][$secondaryChanel];
+      else if(key_exists($primaryChanel,$method) == true){
+        $subChanels = $method[$primaryChanel];
+        foreach ($subChanels as $chanel => $options) {
+          if($this -> isDynamicalChanel($chanel) && ( \count(\explode('/',$secondaryChanel)) == \count(\explode('/',$chanel))) )return $method[$primaryChanel][$chanel];
+        }
+      }
       else echo "<p>chanel not fund<p>";
     }
 
@@ -268,10 +277,16 @@ namespace Router{
       return $toReturn;
     }
 
+    /** Retourne true | false si il s'agit d'une url dynamique */
+    private function isDynamicalChanel(string $chanel):bool{
+      return (\count(\explode(':',$chanel)) > 1 ? true : false); 
+    }
+
     /**
       *Description :
     */
     function get($chanel,$callback){
+      $isDynmicalChanel = $this -> isDynamicalChanel($chanel);
       $primaryChanel = (key_exists("chanel",$GLOBALS) == true && $GLOBALS["chanel"] != null && $GLOBALS["chanel"] != "/" ? $this -> __primary_chanel($GLOBALS["chanel"].$chanel) : $this -> __primary_chanel($chanel));
       $secondaryChanel = (key_exists("chanel",$GLOBALS) == true && $GLOBALS["chanel"] != null && $GLOBALS["chanel"] != "/" ? $this -> __secondary_chanel($GLOBALS["chanel"].$chanel) : $this -> __secondary_chanel($chanel));
       if(key_exists($primaryChanel,$this -> _get) == false)$this -> _get[$primaryChanel] = array();
